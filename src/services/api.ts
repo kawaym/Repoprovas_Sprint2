@@ -59,6 +59,7 @@ export interface Test {
   name: string;
   pdfUrl: string;
   category: Category;
+  views: number;
 }
 
 export type TestByDiscipline = Term & {
@@ -115,6 +116,11 @@ async function createTest(token: string, testData: TestCreationData) {
   return baseAPI.post("/app/adicionar", testData, config);
 }
 
+async function addView(token: string, id: number) {
+  const config = getConfig(token);
+  return baseAPI.put(`/app/view?id=${id}`, undefined, config);
+}
+
 const api = {
   signUp,
   signIn,
@@ -124,6 +130,7 @@ const api = {
   getDisciplines,
   getTeachersByDiscipline,
   createTest,
+  addView,
 };
 
 export default api;

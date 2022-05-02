@@ -1,4 +1,5 @@
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import {
   Accordion,
   AccordionDetails,
@@ -13,6 +14,8 @@ import {
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
+import { AxiosError } from "axios";
+import useAlert from "../hooks/useAlert";
 import api, {
   Category,
   Discipline,
@@ -44,7 +47,6 @@ function Disciplines() {
     console.log(text);
   }
   const debouncedSearch = _.debounce(handleSearch, 250);
-
   return (
     <>
       <TextField
@@ -217,20 +219,58 @@ function Tests({
   categoryId,
   testsWithTeachers: testsWithDisciplines,
 }: TestsProps) {
+  const { token } = useAuth();
+  const { setMessage } = useAlert();
+
+  async function handleAddView(id: number) {
+    try {
+      if (!token) return;
+      await api.addView(token, id);
+    } catch (error: Error | AxiosError | any) {
+      if (error.response) {
+        setMessage({
+          type: "error",
+          text: error.response.data,
+        });
+        return;
+      }
+      setMessage({
+        type: "error",
+        text: "Erro, tente novamente em alguns segundos!",
+      });
+    }
+  }
   return (
     <>
       {testsWithDisciplines.map((testsWithDisciplines) =>
         testsWithDisciplines.tests
           .filter((test) => testOfCategory(test, categoryId))
           .map((test) => (
-            <Typography key={test.id} color="#878787">
-              <Link
-                href={test.pdfUrl}
-                target="_blank"
-                underline="none"
-                color="inherit"
-              >{`${test.name} (${testsWithDisciplines.teacherName})`}</Link>
-            </Typography>
+            <>
+              <Typography
+                key={test.id}
+                color="#878787"
+                sx={{ display: "flex", justifyContent: "space-between" }}
+              >
+                <Link
+                  href={test.pdfUrl}
+                  target="_blank"
+                  underline="none"
+                  color="inherit"
+                  onClick={() => handleAddView(test.id)}
+                >{`${test.name} (${testsWithDisciplines.teacherName})`}</Link>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Typography>{test.views}</Typography>
+                  <VisibilityIcon sx={{ marginLeft: "10px" }} />
+                </Box>
+              </Typography>
+            </>
           ))
       )}
     </>

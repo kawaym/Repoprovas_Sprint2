@@ -1,4 +1,5 @@
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import {
   Accordion,
   AccordionDetails,
@@ -10,9 +11,11 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { AxiosError } from "axios";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
+import useAlert from "../hooks/useAlert";
 import api, {
   Category,
   TeacherDisciplines,
@@ -192,16 +195,52 @@ interface TestsProps {
 }
 
 function Tests({ tests, disciplineName }: TestsProps) {
+  const { token } = useAuth();
+  const { setMessage } = useAlert();
+
+  async function handleAddView(id: number) {
+    try {
+      if (!token) return;
+      await api.addView(token, id);
+    } catch (error: Error | AxiosError | any) {
+      if (error.response) {
+        setMessage({
+          type: "error",
+          text: error.response.data,
+        });
+        return;
+      }
+      setMessage({
+        type: "error",
+        text: "Erro, tente novamente em alguns segundos!",
+      });
+    }
+  }
   return (
     <>
       {tests.map((test) => (
-        <Typography key={test.id} color="#878787">
+        <Typography
+          key={test.id}
+          color="#878787"
+          sx={{ display: "flex", justifyContent: "space-between" }}
+        >
           <Link
             href={test.pdfUrl}
             target="_blank"
             underline="none"
             color="inherit"
+            onClick={() => handleAddView(test.id)}
           >{`${test.name} (${disciplineName})`}</Link>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Typography>{test.views}</Typography>
+            <VisibilityIcon sx={{ marginLeft: "10px" }} />
+          </Box>
         </Typography>
       ))}
     </>
