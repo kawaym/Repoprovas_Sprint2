@@ -28,6 +28,7 @@ import _ from "lodash";
 function Disciplines() {
   const navigate = useNavigate();
   const { token } = useAuth();
+  const { setMessage } = useAlert();
   const [terms, setTerms] = useState<TestByDiscipline[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
 
@@ -43,8 +44,27 @@ function Disciplines() {
     loadPage();
   }, [token]);
 
-  function handleSearch(text: string) {
-    console.log(text);
+  async function handleSearch(text: string) {
+    try {
+      if (!token) return;
+      const query: string = text.length >= 2 ? text : "";
+      const { data: testsData } = await api.getTestsByDiscipline(token, query);
+      setTerms(testsData.tests);
+      const { data: categoriesData } = await api.getCategories(token);
+      setCategories(categoriesData.categories);
+    } catch (error: Error | AxiosError | any) {
+      if (error.response) {
+        setMessage({
+          type: "error",
+          text: error.response.data,
+        });
+        return;
+      }
+      setMessage({
+        type: "error",
+        text: "Erro, tente novamente em alguns segundos!",
+      });
+    }
   }
   const debouncedSearch = _.debounce(handleSearch, 250);
   return (

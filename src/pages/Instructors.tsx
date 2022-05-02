@@ -10,6 +10,7 @@ import {
   Link,
   TextField,
   Typography,
+  Autocomplete,
 } from "@mui/material";
 import { AxiosError } from "axios";
 import React, { useEffect, useState } from "react";
@@ -22,10 +23,12 @@ import api, {
   Test,
   TestByTeacher,
 } from "../services/api";
+import _ from "lodash";
 
 function Instructors() {
   const navigate = useNavigate();
   const { token } = useAuth();
+  const { setMessage } = useAlert();
   const [teachersDisciplines, setTeachersDisciplines] = useState<
     TestByTeacher[]
   >([]);
@@ -42,13 +45,41 @@ function Instructors() {
     }
     loadPage();
   }, [token]);
+  async function handleSearch(text: string) {
+    try {
+      if (!token) return;
+      const query: string = text.length >= 2 ? text : "";
+      const { data: testsData } = await api.getTestsByTeacher(token, query);
+      setTeachersDisciplines(testsData.tests);
+      const { data: categoriesData } = await api.getCategories(token);
+      setCategories(categoriesData.categories);
+    } catch (error: Error | AxiosError | any) {
+      if (error.response) {
+        setMessage({
+          type: "error",
+          text: error.response.data,
+        });
+        return;
+      }
+      setMessage({
+        type: "error",
+        text: "Erro, tente novamente em alguns segundos!",
+      });
+    }
+  }
+  const debouncedSearch = _.debounce(handleSearch, 250);
 
   return (
     <>
       <TextField
         sx={{ marginX: "auto", marginBottom: "25px", width: "450px" }}
         label="Pesquise por pessoa instrutora"
+        onChange={(event) => debouncedSearch(event.target.value)}
+        InputProps={{
+          type: "search",
+        }}
       />
+
       <Divider sx={{ marginBottom: "35px" }} />
       <Box
         sx={{
