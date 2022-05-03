@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const baseAPI = axios.create({
-  baseURL: "http://localhost:5001/",
+  baseURL: process.env.REACT_APP_BASE_URL,
 });
 
 interface UserData {
